@@ -1,0 +1,58 @@
+#!/bin/bash
+docker info > /dev/null 2>&1
+
+# Ensure that Docker is running...
+if [ $? -ne 0 ]; then
+    echo "Docker is not running."
+
+    exit 1
+fi
+
+rm -rf gambabackoffice
+
+while [ -z "$token" ]; do
+    echo "Input your github personal access token: "
+    echo 'Go to the follow URL and generate it:  https://github.com/settings/tokens/new';
+    read -s token 
+done 
+
+while ! git clone "https://$token@github.com/GambaLabs/GambaBackOffice.git" gambabackoffice; do
+    echo 'Error cloning repository, please retry' >&2;
+    
+    echo 'Go to the follow URL and generate it:  https://github.com/settings/tokens/new' >&2;
+    echo "Input your github personal access token: "
+    read -s token 
+done
+
+
+docker run --rm \
+    --pull=always \
+    -v "$(pwd)":/opt \
+    -w /opt \
+    raphaelcangucu/php82-composer:latest \
+    bash -c "cd gambabackoffice && git checkout GAM-362-Install-Laravel-Sail && composer install && cp .env.example .env && php ./artisan sail:install --with=redis,pgsql,memcached,selenium "
+
+cd gambabackoffice
+
+./vendor/bin/sail pull pgsql redis memcached selenium
+./vendor/bin/sail build
+
+CYAN='\033[0;36m'
+LIGHT_CYAN='\033[1;36m'
+BOLD='\033[1m'
+NC='\033[0m'
+
+echo ""
+
+if sudo -n true 2>/dev/null; then
+    sudo chown -R $USER: .
+    echo -e "${BOLD}Get started with:${NC} cd gambabackoffice && ./vendor/bin/sail up"
+else
+    echo -e "${BOLD}Please provide your password so we can make some final adjustments to your application's permissions.${NC}"
+    echo ""
+    sudo chown -R $USER: .
+    echo ""
+    echo -e "Dive in with:${NC} cd gambabackoffice && ./vendor/bin/sail up -d"
+    echo -e "Dont forget to install and migrate the files:${NC} ./vendor/bin/sail artisan migrate --seed"
+    echo -e "${BOLD}Thank you! We hope you build something incredible."
+fi
