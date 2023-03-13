@@ -13,7 +13,7 @@ rm -rf gambabackoffice
 while [ -z "$token" ]; do
     echo "Input your github personal access token: "
     echo 'Go to the follow URL and generate it:  https://github.com/settings/tokens/new';
-    read -s token 
+    read token 
 done 
 
 while ! git clone "https://$token@github.com/GambaLabs/GambaBackOffice.git" gambabackoffice; do
@@ -21,7 +21,7 @@ while ! git clone "https://$token@github.com/GambaLabs/GambaBackOffice.git" gamb
     
     echo 'Go to the follow URL and generate it:  https://github.com/settings/tokens/new' >&2;
     echo "Input your github personal access token: "
-    read -s token 
+    read token 
 done
 
 
